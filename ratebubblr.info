@@ -1,5 +1,5 @@
 name = Rate Bubblr
-description = Bubble Sort Simulation for TAG assessment.
+description = Bubble Sort Simulation.
 package = Other
 core = 7.x
 version = 7.x-1.0
