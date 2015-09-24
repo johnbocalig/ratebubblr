@@ -1,0 +1,22 @@
+tr {
+  color: #fff;
+  text-shadow: 1px 1px #333;
+}
+
+tr div.bar span {
+  padding: 0 5px;
+  display: block;
+  width: 100px;
+}
+
+.swapped div.bar {
+  background-color: #880000;
+}
+
+.not-swapped div.bar {
+  background-color: #000;
+}
+
+.current div.bar {
+  background-color: #008800;
+}

@@ -1,0 +1,168 @@
+<?php
+
+include_once('ratebubblr.constants.inc');
+module_load_include('inc', 'ratebubblr', 'includes/things');
+
+/**
+ * Implements hook_permission().
+ */
+function ratebubblr_permission() {
+  return array(
+    'administer ratebubblr' => array(
+      'title' => t('Administer ratebubblr'),
+      'description' => t('Administer the Rate Bubblr module.'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_menu().
+ */
+function ratebubblr_menu() {
+  $items = array();
+
+  $items[RATEBUBBLR_ADMIN_PATH] = array(
+    'title' => 'RateBubblr',
+    'description' => 'Rate Bubblr configuration page.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('ratebubblr_admin'),
+    'access arguments' => array('administer ratebubblr'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  return $items;
+}
+
+/**
+ * Admin form callback.
+ */
+function ratebubblr_admin() {
+  $form = array();
+
+  $form['ratebubblr_name'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Name'),
+    '#default_value' => variable_get('ratebubblr_name', RATEBUBBLR_NAME_DEFAULT),
+    '#description' => t('The name of the person that we are helping.'),
+    '#required' => TRUE,
+  );
+
+  $form['ratebubblr_things_type'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Type of things'),
+    '#description' => t('The type of things that the person has rated.'),
+    '#default_value' => variable_get('ratebubblr_things_type', RATEBUBBLR_THINGS_TYPE_DEFAULT),
+    '#required' => TRUE,
+  );
+
+  $form['ratebubblr_number_of_things'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Number of things'),
+    '#description' => t('The number of things that the person is rating.'),
+    '#default_value' => variable_get('ratebubblr_number_of_things', RATEBUBBLR_NUMBER_THINGS_DEFAULT),
+    '#required' => TRUE,
+  );
+
+  $form['ratebubblr_rating_scale'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Rating Scale'),
+    '#description' => t('Rated items on a scale of 0-????.'),
+    '#default_value' => variable_get('ratebubblr_rating_scale', RATEBUBBLR_RATING_SCALE_DEFAULT),
+    '#required' => TRUE,
+  );
+
+  $form['#validate'] = array('ratebubblr_admin_validate');
+
+  return system_settings_form($form);
+}
+
+/**
+ * Admin form validation callback.
+ */
+function ratebubblr_admin_validate(&$form, &$form_state) {
+  if ($form_state['values']['ratebubblr_number_of_things'] <= 0) {
+    form_set_error('ratebubblr_number_of_things', t('You have an invalid number of things.'));
+  }
+  if ($form_state['values']['ratebubblr_rating_scale'] <= 0) {
+    form_set_error('ratebubblr_rating_scale', t('You have an invalid rating scale number.'));
+  }
+}
+
+/**
+ * Implements hook_ctools_plugin_directory().
+ */
+function ratebubblr_ctools_plugin_directory($owner, $plugin_type) {
+  if ($owner == 'ctools' && $plugin_type == 'content_types') {
+    return 'plugins/' . $plugin_type;
+  }
+}
+
+/**
+ * Implements hook_theme().
+ */
+function ratebubblr_theme() {
+  return array(
+    'ratebubblr' => array(
+      'file' => 'ratebubblr.theme.inc',
+      'path' => drupal_get_path('module', 'ratebubblr') . '/theme',
+      'template' => 'ratebubblr',
+      'variables' => array(
+        'configure_link' => NULL,
+        'message' => NULL,
+        'number' => NULL,
+        'rating' => NULL,
+        'rating_scale' => NULL,
+        'step_text' => NULL,
+        'things' => array(),
+      ),
+    ),
+  );
+}
+
+/**
+ * Returns the render array for the bubblesort form.
+ */
+function ratebubblr_bubblesort_form($form_state) {
+  $form['shuffle'] = array(
+    '#type' => 'submit',
+    '#value' => t('Shuffle'),
+  );
+
+  // Check to see if the things are in order.
+  // If in order, disable the submit button.
+  $things = new Things();
+  $in_order = $things->checkOrder();
+
+  $form['step'] = array(
+    '#type' => 'submit',
+    '#value' => t('Step'),
+    '#disabled' => $in_order,
+  );
+
+  return $form;
+}
+
+/**
+ * Add a submit handler/function to the form.
+ *
+ * This will alter the things array depending on
+ * which button the user clicks.
+ */
+function ratebubblr_bubblesort_form_submit($form, &$form_state) {
+  $op = $form_state['clicked_button']['#value'];
+  switch ($op) {
+    case 'Step':
+      $things = new Things();
+      $things->stepThings();
+      break;
+
+    case 'Shuffle':
+      $things = new Things();
+      $things->shuffleThings();
+      break;
+
+    default:
+      break;
+
+  }
+}
